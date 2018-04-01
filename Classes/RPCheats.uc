@@ -1,4 +1,4 @@
-class RPCheats extends XComHeadquartersCheatManager;
+class RPCheats extends Mod_StrategyCheatManager;
 
 exec function RoulettePlusTest()
 {

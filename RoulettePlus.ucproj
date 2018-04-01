@@ -5,7 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">Win32</Platform>
     <ProductVersion>1.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>610d0f56-e3b9-49a9-a4d7-db7fc4978b2d</ProjectGuid>
+    <ProjectGuid>{407d2731-468c-435b-b318-caf3107f73dd}</ProjectGuid>
     <OutputType>UserMod</OutputType>
     <ProjectType>UnrealScript</ProjectType>
     <RootNamespace>RoulettePlus</RootNamespace>
