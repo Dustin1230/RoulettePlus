@@ -128,6 +128,15 @@ simulated function StartMatch()
 		ShowAbility();
 	}
 
+	if(functionName == "AbsorbDamage")
+	{
+		ASCSetUnit(StrValue0());
+		AbsorbDamage();
+
+		m_kUnit = none;
+	}
+
+
 
 
 	if(functionName == "CheckSoldierStates")
@@ -518,6 +527,20 @@ function ShowAbility()
 			}
 		}
 	}
+}
+
+
+function AbsorbDamage()
+{
+	local float fDR;
+
+	fDR = 0.f;
+	if(m_kUnit.IsAugmented() && m_kUnit.m_bOneForAllActive && m_kUnit.GetCharacter().HasUpgrade(17))
+	{
+		fDR += 1.5;
+	}
+
+	IntValue0(IntValue0() + int(fDR * 100), true);
 }
 
 // Clears all aliens' perks
