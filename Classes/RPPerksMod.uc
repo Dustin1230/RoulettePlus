@@ -16,6 +16,9 @@ var string AmnesiaPerkDes;
 var config bool bAMedalWait;
 var config array<TSpecPerk> specPerk;
 var XGUnit m_kUnit;
+`ifdebug var XGUnit retainedUnit; `endif
+var XGAbility m_lastAbilitiesCheckedUnit;
+var array<int> m_arrBUnitAbilitiesList;
 var XGStrategySoldier m_kStratSoldier;
 var RoulettePlusMod m_kRPlus;
 var localized string m_perkNames[255];
@@ -71,7 +74,10 @@ simulated function StartMatch()
 	}
 
 	if(functionName == "XGAbility.ApplyCost_Overwrite")
+	{
 		AbilityApplyCost();
+		m_kRPlus.Object(none, true);
+	}
 
 	if(functionName == "GHPD_Overwrite")
 	{
@@ -92,7 +98,9 @@ simulated function StartMatch()
 
 	if(functionName == "SetAdvServos")
 	{
-		GetSoldier(StrValue0());
+		//GetSoldier(StrValue0());
+		if(m_kRPlus.Object() != none)
+			m_kSold = XGStrategySoldier(m_kRPlus.Object());
 		SetAdvServos();
 		m_kSold = none;
 	}
@@ -103,12 +111,17 @@ simulated function StartMatch()
 	}
 	if(functionName == "Strat_Before_GISM")
 	{
-		GetSoldier(StrValue0());
+		//GetSoldier(StrValue0());
+		if(m_kRPlus.Object() != none)
+			m_kSold = XGStrategySoldier(m_kRPlus.Object());
 	}
 	if(functionName == "GISM")
 	{
-		arrStr = SplitString(functParas);
-		ModifyStats(int(arrStr[0]), int(arrStr[1]));
+		if(m_kUnit != none || m_kSold != none)
+		{
+			arrStr = SplitString(functParas);
+			ModifyStats(int(arrStr[0]), int(arrStr[1]), true);
+		}
 	}
 
 	if(functionName == "TurnBeginHook")
@@ -125,7 +138,16 @@ simulated function StartMatch()
 
 	if(functionName == "ShowAbility")
 	{
-		ShowAbility();
+		if(m_kRPlus.Object() != m_lastAbilitiesCheckedUnit)
+		{
+			m_lastAbilitiesCheckedUnit = XGAbility(m_kRPlus.Object());
+			m_arrBUnitAbilitiesList.Length = 0;
+		}
+		if(m_arrBUnitAbilitiesList[XGAbility(m_kRPlus.Object()).GetType()] == 0)
+		{
+			ShowAbility();
+		}
+		m_arrBUnitAbilitiesList[XGAbility(m_kRPlus.Object()).GetType()] = 1;
 	}
 
 	if(functionName == "AbsorbDamage")
@@ -254,20 +276,20 @@ simulated function StartMatch()
 
 	if(functionName == "WepSpec")
     {
-    	arrStr = SplitString(functParas, "_", false);
-    	WepSpecPerk(int(arrStr[0]), arrStr[1]);
+    		arrStr = SplitString(functParas, "_", false);
+    		WepSpecPerk(int(arrStr[0]), arrStr[1]);
     }
 }
 
 // Function to grab the spawn name of a soldier and checks for Strategy/Tactical to set appropriate variable to be used in other functions
-function ASCSetUnit(string UnitName)
+function ASCSetUnit(optional string UnitName)
 {
 	local XGUnit Unit;
 	local XGStrategySoldier Soldier;
 
 	if(isTactical())
 	{
-		foreach WORLDINFO().AllActors(class'XGUnit', Unit)
+/*		foreach WORLDINFO().AllActors(class'XGUnit', Unit)
 		{
 			if(string(Unit) == UnitName)
 			{
@@ -275,10 +297,14 @@ function ASCSetUnit(string UnitName)
 			}
 		}
 		m_kUnit = Unit;
+*/	
+		if(m_kRPlus.Object() != none)
+			m_kUnit = XGUnit(m_kRPlus.Object());
+
 	}
 	else if(isStrategy())
 	{
-		foreach WORLDINFO().AllActors(class'XGStrategySoldier', Soldier)
+/*		foreach WORLDINFO().AllActors(class'XGStrategySoldier', Soldier)
 		{
 			if(string(Soldier) == UnitName)
 			{
@@ -286,17 +312,20 @@ function ASCSetUnit(string UnitName)
 			}
 		}
 		m_kStratSoldier = Soldier;
+*/
+		if(m_kRPlus.Object() != none)
+			m_kStratSoldier = XGStrategySoldier(m_kRPlus.Object());
 	}
 }
 
 function AbilityApplyCost()
 {
 	local string strAbility;
-	local bool bFound, bOverwrite, IsSoldier;
+	local bool bFound, bOverwrite, IsSoldier, endTurn;
 	local XGAbility kAbility;
     local XComUIBroadcastWorldMessage kBroadcastWorldMessage;
 
-	strAbility = StrValue0();
+/*	strAbility = StrValue0();
 
 	foreach WORLDINFO().AllActors(class'XGAbility', kAbility)
 	{
@@ -307,6 +336,10 @@ function AbilityApplyCost()
 		}
 	}
 	if(!bFound) return;
+*/
+	
+	if(m_kRPlus.Object() != none)
+		kAbility = XGAbility(m_kRPlus.Object());
 
 	if(kAbility.HasProperty(8) || kAbility.m_bReactionFire) return;
 
@@ -390,13 +423,13 @@ function AbilityApplyCost()
 
 function SetAdvServos()
 {
-	if(m_kRPCheckpoint.arrSoldierStorage.Length > 0 || FindSoldierInStorage(, m_kSold) == -1)
+	if(m_kRPCheckpoint.arrSoldierStorage.Length == 0 || FindSoldierInStorage(, m_kSold) == -1)
 		CreateSoldierStor(m_kSold);
 
 	m_kRPCheckpoint.arrSoldierStorage[FindSoldierInStorage(, m_kSold)].advServos = true;
 }
 
-function ModifyStats(int iStat, int iEquippedWeapon)
+function ModifyStats(int iStat, int iEquippedWeapon, optional bool bLoop)
 {
 	local int soldID;
 
@@ -409,7 +442,7 @@ function ModifyStats(int iStat, int iEquippedWeapon)
 	{
 		if(m_kRPCheckpoint.arrSoldierStorage.Length > 0) 
 		{
-			if(FindSoldierInStorage(soldID) != -1)
+			if(XGCharacter_Soldier(m_kUnit.GetCharacter()) != none && FindSoldierInStorage(soldID) != -1)
 			{
 				if(m_kRPCheckpoint.arrSoldierStorage[FindSoldierInStorage(soldID)].advServos)
 					IntValue0(IntValue0() + 4, true);
@@ -417,7 +450,7 @@ function ModifyStats(int iStat, int iEquippedWeapon)
 		}
 	}
 
-	if(iStat == 18)
+	if(!bLoop || iStat == 18)
 	{
 		m_kUnit = none;
 		m_kSold = none;
@@ -492,18 +525,38 @@ function ShowAbility()
 	local string strAbility;
 	local bool bFound;
 	local XGAbility kAbility;
+	local int I;
 
-	strAbility = StrValue0();
+/*	strAbility = StrValue0();
 	
 	foreach WORLDINFO().AllActors(class'XGAbility', kAbility)
 	{
+		I += 1;
 		if(string(kAbility) == strAbility)
 		{
 			bFound = true;
 			break;
 		}
 	}
-	if(!bFound) return;
+
+	ScriptTrace();
+*/
+	if (m_kRPlus.Object() != none)
+		kAbility = XGAbility(m_kRPlus.Object());
+
+
+	`logde("ShowAbility Iterated " $ I $ " times");
+	`logde("Ability Name: '" $ kAbility.strName $ "'");
+	`logde("Ability Unit: '" $ kAbility.m_kUnit $ "'");
+	`ifdebug
+		if(kAbility.m_kUnit != retainedUnit)
+		{
+			retainedUnit = kAbility.m_kUnit;
+			`logde("Ability SoldierName: '" $ (XGCharacter_Soldier(kAbility.m_kUnit.GetCharacter()) != none ? XGCharacter_Soldier(kAbility.m_kUnit.GetCharacter()).GetFullName() : "[NOT A SOLDIER]") $ "'");
+		}
+	`endif
+
+//	if(!bFound) return;
 
 	if(kAbility.HasDisplayProperty(1) || ( !kAbility.CheckAvailable() && kAbility.HasDisplayProperty(2) ) ) return;
 
@@ -562,9 +615,9 @@ function ASCPerkDescription()
 	else
 		kSold = SOLDIER();
 	
-	`Logd("ASCPerkDescription");
+	`Logde("ASCPerkDescription");
 
-	`Logd("kSold= " $ string(kSold));
+	`Logde("kSold= " $ string(kSold));
 
 	if(SOLDIERUI().m_iCurrentView != 2)
 	{
@@ -572,11 +625,11 @@ function ASCPerkDescription()
 
 		if(isSoldierNewType(kSold) && SOLDIERUI().GetAbilityTreeBranch() != 1)
 		{
-			`Logd("IsNewType");
+			`Logde("IsNewType");
 
 			iPerk = NewRandomTree(kSold, -1)[iPos];
 
-			`Logd("iPerk= " $ string(iPerk));
+			`Logde("iPerk= " $ string(iPerk));
 			
 			StatsStor = GetPerkStats(kSold, iPos);
 		}
@@ -588,7 +641,7 @@ function ASCPerkDescription()
 				iPerk = 0;
 
 			if(SOLDIERUI().GetAbilityTreeBranch() == 1)
-				iPerk = kSold.PERKS().GetPerkInTree(kSold.GetClass() == 6 ? byte(kSold.m_iEnergy) : kSold.GetClass(), 1, SOLDIERUI().GetAbilityTreeOption(), false);
+				iPerk = kSold.PERKS().GetPerkInTree(kSold.GetClass() == 6 ? kSold.m_iEnergy : kSold.GetClass(), 1, SOLDIERUI().GetAbilityTreeOption(), false);
 			
 			OldPerkStats(iPos, true);
 			StatsStor.aim = arrInts()[0];
@@ -599,8 +652,8 @@ function ASCPerkDescription()
 			
 			foreach m_kRPlus.MergePerk1(mPerk, I)
 			{
-				Perk1 = super.SearchPerks(mPerk);
-				Perk2 = super.SearchPerks(MergePerk2[I]);
+				Perk1 = m_kRPlus.SearchPerks(mPerk);
+				Perk2 = m_kRPlus.SearchPerks(MergePerk2[I]);
 				
 				if( (m_kRPlus.MergePerkClass[I] == -1) || (SOLDIERUI().GetAbilityTreeBranch() == 1) ? (m_kRPlus.MergePerkClass[I] == kSold.GetClass()) : (m_kRPlus.MergePerkClass[I] == kSold.m_iEnergy) )
 				{
@@ -679,11 +732,8 @@ function ASCPerks(string funct, int perk, optional int value = 1)
 		{
 			if(SID == m_kRPCheckpoint.arrSoldierStorage[I].SoldierID)
 			{
-				if(m_kRPCheckpoint.arrSoldierStorage[I].perks[perk] > 0)
-				{
-					bFound = true;
-					m_kRPCheckpoint.arrSoldierStorage[I].perks[perk] += value;
-				}
+				bFound = true;
+				m_kRPCheckpoint.arrSoldierStorage[I].perks[perk] += value;
 			}
 		}
 
