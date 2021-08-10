@@ -1,4 +1,4 @@
-class RPCheats extends Mod_StrategyCheatManager;
+class RPTacticalCheats extends Mod_TacticalCheatManager;
 
 function RoulettePlusMod RP()
 {
