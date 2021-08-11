@@ -134,6 +134,10 @@ simulated function StartMatch()
 		{
 			ModCheatClass = class'RPCheats';
 		}
+		if(functParas == "Tactical")
+		{
+			ModCheatClass = class'RPTacticalCheats';
+		}
 	}
 
 
@@ -172,6 +176,8 @@ simulated function StartMatch()
 			kSold = m_kSold;
 		else
 			kSold = SOLDIER();
+
+		`Log(`ShowVar(kSold), verboseLog, 'GetPerkInClassTree');
 
 		`logd("Loriendal" @ `ShowVar(arrStr[2], bIsPsiTree));
 		`logd("Loriendal" @ bool(arrStr[2]) ? "True" : "False");
@@ -292,6 +298,8 @@ simulated function StartMatch()
 		if(XGStrategySoldier(Object()) != none)
 			m_kSold = XGStrategySoldier(Object());
 		//GetSoldier(StrValue0());
+
+		`Log(`ShowVar(m_kSold),, 'BuildAugmentMenuOption');
 		
 		BuildAugmentMenuOption();
 		
@@ -823,21 +831,39 @@ function SWTitleAmmend(int option)
 
 
 
+
 function RemoveRandPerks(XGStrategySoldier kSoldier)
 {
-	local array<int> arrPerkTree;
-	local int iTreeLength, I;
+    local array<int> arrPerkTree;
+    local int iTreeLength, I;
 
-	if(isSoldierNewType(kSoldier))
+	m_kSold = kSoldier;
+
+    if(isSoldierNewType(kSoldier))
+    {
+        iTreeLength = NewRandomTree(kSoldier, -2)[0];
+        arrPerkTree = NewRandomTree(kSoldier, -1);
+    }
+	else
 	{
-		iTreeLength = NewRandomTree(kSoldier, -2)[0];
-		arrPerkTree = NewRandomTree(kSoldier, -1);
-
-		for(I = 0; I < iTreeLength; I++)
-		{
-			kSoldier.m_kChar.aUpgrades[arrPerkTree[I]] = 0;
-		}
+		arrPerkTree = OldPerkTree(kSoldier);	
 	}
+
+    for(I = 3; I < 21; I++)
+    {
+		`Log(`ShowVar(arrPerkTree[I], perk) @ `ShowVar(GetMergedPerk(arrPerkTree[I]), GetMergedPerk) @ `ShowVar(bool(kSoldier.m_kChar.aUpgrades[GetMergedPerk(arrPerkTree[I])]), HasPerk),, 'RemoveMergePerk');
+		if(GetMergedPerk(arrPerkTree[I]) != 0 && kSoldier.m_kChar.aUpgrades[GetMergedPerk(arrPerkTree[I])] % 2 == 1)
+		{
+			`Log(`ShowVar(kSoldier.m_kChar.aUpgrades[GetMergedPerk(arrPerkTree[I])], GetMergedPerk),, 'RemoveMergePerk_Before');
+			kSoldier.m_kChar.aUpgrades[GetMergedPerk(arrPerkTree[I])] -= 1;
+			`Log(`ShowVar(kSoldier.m_kChar.aUpgrades[GetMergedPerk(arrPerkTree[I])], GetMergedPerk),, 'RemoveMergePerk_After');
+		}
+        if(kSoldier.m_kChar.aUpgrades[arrPerkTree[I]] % 2 == 1)
+        {
+			kSoldier.m_kChar.aUpgrades[arrPerkTree[I]] -= 1;
+        }
+    }
+
 }
 
 function VanRandPerks()
@@ -2180,7 +2206,22 @@ function addPerkToTree(XGStrategySoldier kSold, int perk)
 
 function PerkMerge(int Perk)
 {
+	local XGStrategySoldier kSold;
+	
+	if(m_kSold != none)
+	{
+		kSold = m_kSold;
+	}
+	else
+	{
+		kSold = SOLDIER();
+	}
 
+	kSold.GivePerk(GetMergedPerk(Perk));
+}
+
+function int GetMergedPerk(int Perk)
+{
 	local int I, Perk1, Perk2;
 	local array<int> PerkTree;
 	local string mPerk;
@@ -2195,6 +2236,11 @@ function PerkMerge(int Perk)
 		kSold = SOLDIER();
 	}
 
+	`log(`ShowVar(kSold),, 'GetMergedPerk');
+
+	`Log(`ShowVar(Perk) @ `ShowVar(kSold.HasPerk(Perk), HasPerk),, 'GetMergedPerk');
+
+	`Log(`ShowVar(IsSoldierNewType(kSold), IsSoldierNewType) @ `ShowVar(SOLDIERUI().GetAbilityTreeBranch() != 1, NotRank1),, 'GetMergedPerk');
 
 	if(kSold.HasPerk(Perk))
 	{
@@ -2204,9 +2250,12 @@ function PerkMerge(int Perk)
 
 			for(I=0; I<perktree.Length; I++)
 			{
+
+				`Log(`ShowVar(PerkTree[I]) @ `ShowVar(GetPerkStats(kSold, I).perk, PerkStatsPerk),, 'GetMergedPerk');
+
 				if(perktree[I] == Perk && GetPerkStats(kSold, I).perk > 0)
 				{
-					kSold.GivePerk(GetPerkStats(kSold, I).perk);
+					return GetPerkStats(kSold, I).perk;
 				}
 			}
 		}
@@ -2222,7 +2271,7 @@ function PerkMerge(int Perk)
 				{
 					if(Perk1 == Perk)
 					{
-						kSold.GivePerk(Perk2);
+						return Perk2;
 						break;
 					}
 				}
@@ -2232,7 +2281,7 @@ function PerkMerge(int Perk)
 
 	}
 
-
+	return 0;
 
 }
 
