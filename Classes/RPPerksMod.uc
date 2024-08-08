@@ -9,6 +9,15 @@ struct TSpecPerk
   	var array<int> iPerk;
 };
 
+struct TCritPerk
+{
+	var int iPerk;
+	var int iValue;
+};
+
+var config array<TCritPerk> m_arrCritBonusPerks;
+var config array<TCritPerk> m_arrCritPenaltyPerks;
+var int iCritCounter;
 var config int AmnesiaWillLossAmount;
 var config int AmnesiaWillLossType;
 var string AmnesiaPerkName;
@@ -60,7 +69,7 @@ simulated function StartMatch()
 {
 	local array<string> arrStr;
 	local XGStrategySoldier kSold;
-
+/*      DEPRECATED
 	if(functionName == "ModInit")
 	{
 		m_kRPlus = RoulettePlusMod(Mods("RoulettePlus.RoulettePlusMod"));
@@ -72,7 +81,25 @@ simulated function StartMatch()
 		MergePerk2 = m_kRPlus.MergePerk2;
 		expandPerkarray();
 	}
-
+	
+	if(functionName == "XenocideCount")
+	{
+		ASCSetUnit(StrValue0());
+		XenocideCount();
+		m_kUnit = none;
+	}
+	
+	if(functionName == "CorruptMessage")
+	{
+		ASCSetUnit(StrValue0());
+		CrruptMessage(StrValue1());
+	}
+	
+	if(functionName == "ASCPerkDescription")
+	{
+		ASCPerkDescription();
+	}
+*/
 	if(functionName == "XGAbility.ApplyCost_Overwrite")
 	{
 		AbilityApplyCost();
@@ -83,6 +110,7 @@ simulated function StartMatch()
 	{
 		`logd(`ShowVar(SOLDIERUI().GetAbilityTreeBranch()) $ ", " $ `ShowVar(SOLDIERUI().GetAbilityTreeOption()) $ ", pos:'" $ ((SOLDIERUI().GetAbilityTreeBranch() - 1) * 3) + SOLDIERUI().GetAbilityTreeOption());
 		`logd(`ShowVar(SOLDIERUI().m_kSoldier.m_kChar.eClass));
+/*		DEPRECATED
 		ASCSetUnit(StrValue0());
 
 		if(m_kStratSoldier != none)
@@ -91,18 +119,21 @@ simulated function StartMatch()
 			kSold = SOLDIER();
 
 		if(kSold.IsOptionEnabled(4))
-			ASCPerkDescription();
+*/
+		ASCPerkDescription();
 
-		m_kStratSoldier = none;
+//		m_kStratSoldier = none;
 	}
 
 	if(functionName == "SetAdvServos")
 	{
-		//GetSoldier(StrValue0());
+/*		DEPRECATED
+		GetSoldier(StrValue0());
 		if(m_kRPlus.Object() != none)
 			m_kSold = XGStrategySoldier(m_kRPlus.Object());
+*/
 		SetAdvServos();
-		m_kSold = none;
+//		m_kSold = none;
 	}
 
 	if(functionName == "AISM")
@@ -158,9 +189,6 @@ simulated function StartMatch()
 		m_kUnit = none;
 	}
 
-
-
-
 	if(functionName == "CheckSoldierStates")
 	{
 		ASCSetUnit(StrValue0());
@@ -180,7 +208,7 @@ simulated function StartMatch()
 	if(functionName == "SetSoldierStates")
 	{
 		ASCSetUnit(StrValue0());
-		SetSoldierStates(functparas);
+		SetSoldierStates(functParas);
 		m_kUnit = none;
 		m_kStratSoldier = none;
 	}
@@ -189,36 +217,25 @@ simulated function StartMatch()
 	{
 		EmptyAlienStor();
 	}
-	
-	if(functionName == "ASCPerkDescription")
-	{
-		ASCPerkDescription();
-	}
-	
+/*      DEPRECATED
 	if(functionName == "ASCPerks") 
-    {
-		arrStr = SplitString(functparas, "_", false);
+	{
+		arrStr = SplitString(functParas, "_", false);
 
 		ASCSetUnit(arrStr[0]);
 
 		if(arrStr.Length > 3) 
-        {
+		{
 			ASCPerks(arrStr[1], int(arrStr[2]), int(arrStr[3]));
 		}
 		else 
-        {
+		{
 			ASCPerks(arrStr[1], int(arrStr[2]));
 		}
 		m_kUnit = none;
 		m_kStratSoldier = none;
 	}
-
-	if(functionName == "CurruptMessage")
-	{
-		ASCSetUnit(StrValue0());
-		CurruptMessage(StrValue1());
-	}
-
+*/
 	if(functionName == "AlienHasPerk")
 	{
 		ASCSetUnit(StrValue0());
@@ -249,23 +266,16 @@ simulated function StartMatch()
 		IncapTimer();
 		m_kUnit = none;
 	}
-
+/*      INACTIVE/  Gonna look at a new way to do this in the future.
 	if(functionName == "ActivateAmnesia")
 	{
 		ActivateAmnesia();
 	}
-
+*/
 	if(functionName == "ResetXenocideCount")
 	{
 		ASCSetUnit(StrValue0());
 		ResetXenocideCount();
-		m_kUnit = none;
-	}
-
-	if(functionName == "XenocideCount")
-	{
-		ASCSetUnit(StrValue0());
-		XenocideCount();
 		m_kUnit = none;
 	}
 
@@ -279,6 +289,55 @@ simulated function StartMatch()
     		arrStr = SplitString(functParas, "_", false);
     		WepSpecPerk(int(arrStr[0]), arrStr[1]);
     }
+
+
+
+	// New StartMatch() Calls
+	if(functionName == "HasUpgrade_Overwrite")
+	{
+		HasUpgrade_Overwrite(functParas);
+	}
+
+	if(functionName == "HasPerk_Overwrite")
+	{
+		TRPHasPerk(functParas);
+	}
+
+	if(functionName == "GivePerk_Overwrite")
+	{
+		TRPGivePerk(functParas);
+	}
+
+	if(functionName == "ClearPerks_Overwrite")
+	{
+		TRPClearPerks(functParas);
+	}
+
+	if(functionName == "ApplyPsiEffect")
+	{
+		ApplyPsiEffects();
+	}
+
+	if(functionName == "CritBonusStart")
+	{
+		CritBonusStart();
+	}
+
+	if(functionName == "CritPenaltyStart")
+	{
+		CritPenaltyStart();
+	}
+
+	if(functionName == "CritBonusLoop")
+	{
+		CritBonusLoop();
+	}
+
+	if(functionName == "CritPenaltyLoop")
+	{
+		CritPenaltyLoop();
+	}
+
 }
 
 // Function to grab the spawn name of a soldier and checks for Strategy/Tactical to set appropriate variable to be used in other functions
@@ -423,10 +482,15 @@ function AbilityApplyCost()
 
 function SetAdvServos()
 {
+	if(m_kRPlus.Object() != none)
+		m_kSold = XGStrategySoldier(m_kRPlus.Object());
+	
 	if(m_kRPCheckpoint.arrSoldierStorage.Length == 0 || FindSoldierInStorage(, m_kSold) == -1)
 		CreateSoldierStor(m_kSold);
 
 	m_kRPCheckpoint.arrSoldierStorage[FindSoldierInStorage(, m_kSold)].advServos = true;
+
+	m_kSold = none;
 }
 
 function ModifyStats(int iStat, int iEquippedWeapon, optional bool bLoop)
@@ -615,6 +679,11 @@ function ASCPerkDescription()
 	else
 		kSold = SOLDIER();
 	
+	if(!kSold.IsOptionEnabled(4))
+	{
+		return;
+	}
+
 	`Logde("ASCPerkDescription");
 
 	`Logde("kSold= " $ string(kSold));
@@ -689,6 +758,7 @@ function ASCPerkDescription()
 		StrValue0("True");
 		StrValue1(Output, true);
 	}
+	m_kStratSoldier = none;
 }
 
 // Checks for, Adds, or Removes new perks(perks not from Long War)
@@ -1230,33 +1300,121 @@ function bool CheckStates(string state)
 	}
 }
 
-// Messages that appears to let the player know if Corrupt failed or succeeded
-function CurruptMessage(string strTarget)
+function CritBonusStart()
 {
-	local XGUnit Unit, kTarget;
-	local bool bPanic;
-	local XComUIBroadcastWorldMessage kMessage;
-	local string msgStr;
-	local int CurruptWillTest, WillChance, UnitWill;
+	local array<int> arrPerks;
+	
+	arrPerks = m_arrCritBonusPerks;
 
-	foreach WORLDINFO().AllActors(class'XGUnit', Unit)
+	if(arrPerks.Length > 0)
 	{
-		if(string(Unit) == strTarget)
+		StrValue0("True");
+		iCounter = 0;
+	}
+}
+
+function CritPenaltyStart()
+{
+	local array<int> arrPerks;
+	
+	arrPerks = m_arrCritPenaltyPerks;
+
+	if(arrPerks.Length > 0)
+	{
+		StrValue0("True");
+		iCounter = 0;
+	}
+}
+
+function CritBonusLoop()
+{
+	local XGAbility_Targeted kAbility;
+	local XGUnit kUnit;
+
+	kAbility = XGAbility_Targeted(m_kRPlus.Object());
+	kUhit = kAbility.m_kUnit;
+
+	if(m_arrCritBonusPerks.iPerk == 180)
+	{
+		if(kUnit.GetCharacter().HasUpgrade(180))
 		{
-			kTarget = Unit;
-			break;
+			StrValue1(m_perkNames[m_arrCritBonusPerks.iPerk]);
+			IntValue0(m_arrCritBonusPerks.iValue);
 		}
 	}
 
-	CurruptWillTest = (25 + ((kTarget.RecordMoraleLoss(6) / 4) * XGCharacter_Soldier(kTarget.GetCharacter()).m_kSoldier.iRank));
-	UnitWill = m_kUnit.RecordMoraleLoss(7);
-	WillChance = m_kUnit.WillTestChance(CurruptWillTest, UnitWill, false, false,, 50);
+	if(m_arrCritBonusPerks.iPerk == 190)
+	{
+		if(kUnit.GetCharacter().HasUpgrade(190) && kAbility.GetPrimaryTarget().IsVulnerableToElectropulse())
+		{
+			StrValue1(m_perkNames[m_arrCritBonusPerks.iPerk]);
+			IntValue0(m_arrCritBonusPerks.iValue);
+		}
+	}
 
-	LogInternal("CurruptWillTest= " $ string(CurruptWillTest) @ "//" @ "UnitWill= " $ string(UnitWill) @ "//" @ "WillChance= " $ string(WillChance), 'CurruptMessage');
+	iCounter++;
+	if(iCounter > m_arrCritBonusPerks.Length)
+	{
+		StrValue0("False");
+	}
+}
+
+function CritPenaltyLoop()
+{
+	local XGAbility_Targeted kAbility;
+	local XGUnit kUnit;
+
+	kAbility = XGAbility_Targeted(m_kRPlus.Object());
+	kUhit = kAbility.m_kUnit;
+
+	if(m_arrCritPenaltyPerks.iPerk == 179)
+	{
+		if(kAbility.GetPrimaryTarget().GetCharacter().HasUpgrade(179))
+		{
+			StrValue1(m_perkNames[m_arrCritPenaltyPerks.iPerk]);
+			IntValue0(m_arrCritPenaltyPerks.iValue);
+		}
+	}
+
+	iCounter++;
+	if(iCounter > m_arrCritPenaltyPerks.Length)
+	{
+		StrValue0("False");
+	}
+}
+
+function ApplyPsiEffects()
+{
+	local XGUnit kTarget;
+
+	kTarget = XGAction_Fire(XGUnit(m_kRPlus.Object()).m_kCurrentAction).m_kTargetedEnemy;
+
+	if(kTarget.GetCharacter().HasUpgrade(189))
+	{
+		CorruptMessage();
+	}
+}
+
+// Messages that appears to let the player know if Corrupt failed or succeeded
+function CorruptMessage()
+{
+	local XGUnit kTarget;
+	local bool bPanic;
+	local XComUIBroadcastWorldMessage kMessage;
+	local string msgStr;
+	local int CorruptWillTest, WillChance, UnitWill;
+
+	kTarget = XGAction_Fire(XGUnit(m_kRPlus.Object()).m_kCurrentAction).m_kTargetedEnemy;
+
+	CorruptWillTest = (25 + ((kTarget.RecordMoraleLoss(6) / 4) * XGCharacter_Soldier(kTarget.GetCharacter()).m_kSoldier.iRank));
+	UnitWill = m_kUnit.RecordMoraleLoss(7);
+	WillChance = m_kUnit.WillTestChance(CorruptWillTest, UnitWill, false, false,, 50);
+
+	LogInternal("CorruptWillTest= " $ string(CorruptWillTest) @ "//" @ "UnitWill= " $ string(UnitWill) @ "//" @ "WillChance= " $ string(WillChance), 'CorruptMessage');
 
 	if(m_kUnit != none && kTarget != none && XGCharacter_Soldier(kTarget.GetCharacter()) != none)
 	{
-		bPanic = m_kUnit.PerformPanicTest(CurruptWillTest,, true, 8);
+		bPanic = m_kUnit.PerformPanicTest(CorruptWillTest,, true, 8);
 
 		if(bPanic)
 		{
