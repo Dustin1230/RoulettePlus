@@ -9,16 +9,16 @@ struct TSpecPerk
   	var array<int> iPerk;
 };
 
-struct TCritPerk
+struct TSummaryPerk
 {
 	var int iPerk;
 	var int iValue;
 };
 
-var config array<TCritPerk> m_arrCritBonusPerks;
-var config array<TCritPerk> m_arrCritPenaltyPerks;
-var config array<TCritPerk> m_arrHitBonusPerks;
-var config array<TCritPerk> m_arrHitPenaltyPerks;
+var config array<TSummaryPerk> m_arrCritBonusPerks;
+var config array<TSummaryPerk> m_arrCritPenaltyPerks;
+var config array<TSummaryPerk> m_arrHitBonusPerks;
+var config array<TSummaryPerk> m_arrHitPenaltyPerks;
 var int iCritCounter;
 var config int AmnesiaWillLossAmount;
 var config int AmnesiaWillLossType;
