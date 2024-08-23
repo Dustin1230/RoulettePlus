@@ -449,7 +449,7 @@ function TRPUpdatePerks()
 	}
 }
 
-function bool TRPHasPerk(int iPerk);
+function bool TRPHasPerk(int iPerk)
 {
 	local XGUnit kTactUnit;
 	local XGStrategySoldier kStratUnit;
